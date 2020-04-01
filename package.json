@@ -1,0 +1,51 @@
+{
+  "main": "node_modules/expo/AppEntry.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "eject": "expo eject",
+    "build": "expo-module build",
+    "clean": "expo-module clean",
+    "test": "expo-module test",
+    "prepare": "expo-module prepare",
+    "prepublishOnly": "expo-module prepublishOnly",
+    "expo-module": "expo-module"
+  },
+  "dependencies": {
+    "@react-native-community/datetimepicker": "^2.1.0",
+    "@react-native-community/google-signin": "^3.0.4",
+    "dayjs": "^1.8.20",
+    "expo": "^36.0.0",
+    "expo-cli": "^3.8.0",
+    "expo-facebook": "~8.0.0",
+    "expo-file-system": "~8.0.0",
+    "expo-google-app-auth": "^8.0.1",
+    "expo-google-sign-in": "~8.0.0",
+    "expo-image-picker": "~8.0.1",
+    "expo-location": "^8.0.0",
+    "expo-permissions": "~8.0.0",
+    "firebase": "^7.4.0",
+    "firebase-admin": "^8.9.2",
+    "firebase-tools": "^7.14.0",
+    "react": "16.9.0",
+    "react-dom": "16.9.0",
+    "react-native": "https://github.com/expo/react-native/archive/sdk-36.0.1.tar.gz",
+    "react-native-fbsdk": "^1.1.2",
+    "react-native-google-places-autocomplete": "^1.4.1",
+    "react-native-google-signin": "^2.1.1",
+    "react-native-multi-selectbox": "^1.2.8",
+    "react-native-searchbar": "^1.16.0",
+    "react-native-svg": "^9.13.3",
+    "react-native-web": "^0.11.7",
+    "react-navigation": "^2.13.0",
+    "react-select-2": "^2.0.11",
+    "styled-components": "^5.0.1"
+  },
+  "devDependencies": {
+    "babel-preset-expo": "^8.0.0",
+    "expo-module-scripts": "^1.2.0"
+  },
+  "private": true
+}
