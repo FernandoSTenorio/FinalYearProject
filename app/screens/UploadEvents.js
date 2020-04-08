@@ -287,7 +287,7 @@ class UploadEvents extends React.Component{
                                     maxLenght={50}
                                     autoCorrect={true}
                                     onChangeText={(text) => this.setState({title: text})}
-                                    style={{height:40}}/>
+                                    style={styles.intputText}/>
 
                                     <Input
                                     editable={true}
@@ -297,7 +297,7 @@ class UploadEvents extends React.Component{
                                     multiline={false}
                                     numberOfLines={1}
                                     onChangeText={(text) => this.setState({type: text})}
-                                    style={{height:40}}/>
+                                    style={styles.intputText}/>
 
                                     <Input
                                     editable={true}
@@ -307,7 +307,7 @@ class UploadEvents extends React.Component{
                                     multiline={false}
                                     numberOfLines={1}
                                     onChangeText={(text) => this.setState({location: text})}
-                                    style={{height: 40}}/>
+                                    style={styles.intputText}/>
 
                                     <Input
                                     editable={true}
@@ -317,7 +317,7 @@ class UploadEvents extends React.Component{
                                     autoCorrect={true}
                                     numberOfLines={3}
                                     onChangeText={(text) => this.setState({description: text})}
-                                    style={{height: 100}}/>
+                                    style={{height: 100, backgroundColor:'white'}}/>
                                     
                                     {/* <GooglePlacesInput/> */}
                                     
@@ -372,6 +372,13 @@ class UploadEvents extends React.Component{
     }
 
 }
+
+const styles = StyleSheet.create({
+    intputText:{
+        height:40, 
+        backgroundColor: 'white'
+    }
+})
 const Colors1 = {
     primary: '#078489',
     secondary: '#124b5f',

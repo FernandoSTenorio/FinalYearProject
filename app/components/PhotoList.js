@@ -16,7 +16,8 @@ class PhotoList extends React.Component{
             loading: true,
             empty: false,
             comments: 0,
-            photoId:''
+            photoId:'',
+            refreshLike: false
         }
     }
 
@@ -113,31 +114,36 @@ class PhotoList extends React.Component{
                 imageId: photoId
             };
 
-            f.database().ref().child('likes').child(photoId).child(userId)
-            .once('value').then(snapshot => {
-                console.log(snapshot.key);
-                if(snapshot.key == userId){
-                    let userId = snapshot.val();
-                    console.log('You have already liked it')
-                    alert('You have already liked it');
+            var ref = f.database().ref('likes');
+
+            ref.once('value')
+            .then(snapshot => {
+                var userid = snapshot.child(photoId).child(userId).exists()
+                if(userid){
+
+                    let ref = database.ref('/likes/'+'/'+photoId+'/'+userId);
+                    ref.remove();
+
                     f.database().ref('photos').child(photoId).child('likes').transaction((likes) => {
-                        return (likes || 0) - 1;
+                        return (likes -1);
                     })
-                    // return userId;
+                    this.reloadPage();
+                }else{
+                    database.ref('/likes/'+'/'+photoId+'/'+userId+'/'+likeId).set(likeObj);
+
+                    f.database().ref('photos').child(photoId).child('likes').transaction((likes) => {
+                        return (likes || 0) +1;
+                    })
+                    this.reloadPage();
                 }
-            })
+                console.log(userid);
+            });
 
-            database.ref('/likes/'+'/'+photoId+'/'+userId+'/'+likeId).set(likeObj);
 
-            f.database().ref('photos').child(photoId).child('likes').transaction((likes) => {
-                return (likes || 0) +1;
-            })
-            this.reloadPage();
+            
         }
 
     }
-
-
     loadFeed = (userId = '') => {
         this.setState({
             refresh:true,
@@ -219,9 +225,13 @@ class PhotoList extends React.Component{
                                 <TouchableOpacity
                                 onPress={ () => this.props.navigation.navigate('Comments', {photoId: item.id})}>
                                     <View style={{flexDirection:'row', alignContent:'center', paddingLeft: 10}}>
-                                    <Likes onPress={() => this.postLike(item.id)}>
-                                        {item.likes}
-                                    </Likes>
+                                    <View>
+                                        <Likes onPress={() => this.postLike(item.id)} refresh={this.state.refreshLike}>
+                                            
+                                            {item.likes}
+                                             
+                                        </Likes>
+                                    </View>
                                         <FontAwesome 
                                             name={'comments'}
                                             size={25}/>

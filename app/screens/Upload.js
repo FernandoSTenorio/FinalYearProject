@@ -224,7 +224,6 @@ class Upload extends React.Component{
                 { this.state.loggedin == true ? (
                     //logged in
                     <ScrollView>
-                        {/* Check if the Image is Selected */}
                     
                         <ScrollView >
                             <Headers onPress={()=> this.props.navigation.goBack()} back='back' >

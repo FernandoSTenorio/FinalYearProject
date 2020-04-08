@@ -13,7 +13,7 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import Headers from './app/components/Headers.js';
 import UploadEvents from './app/screens/UploadEvents.js';
 import EventInfo from './app/screens/EventInfo.js';
-import Likes from './app/components/Likes';
+import Form from './app/screens/Form';
 
 
 const TabStack = createBottomTabNavigator(
@@ -73,7 +73,7 @@ const MainStack = createStackNavigator(
     UploadEvents: { screen: UploadEvents},
     EventInfo: {screen: EventInfo},
     Header: {screen: Headers},
-    Likes: {screen: Likes}
+    Form: {screen: Form}
   },
   {
     initialRouteName: 'Home',

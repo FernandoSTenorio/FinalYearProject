@@ -1,7 +1,7 @@
 import React from 'react';
 import {View, TouchableOpacity, Text, TextInput, Image, ScrollView} from 'react-native';
 import {f, auth, database, storage} from '../../config/config.js'
-import EventList from '../components/EventList.js';
+import Button from '../components/Button';
 import timeConverter from '../components/TimerConverter';
 
 class EventInfo extends React.Component {
@@ -129,6 +129,10 @@ class EventInfo extends React.Component {
                                     <Text>Event Type: {this.state.type}</Text>
                                     <Text>Vetting Required: {this.state.vetting}</Text>
                                     <Text>Location: {this.state.location}</Text>
+                                </View>
+
+                                <View>
+                                    <Button onPress={() => this.props.navigation.navigate('Form', {eventId: this.state.eventId})} message={'Apply'}/>
                                 </View>
 
                             </View>

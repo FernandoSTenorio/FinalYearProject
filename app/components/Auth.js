@@ -1,7 +1,7 @@
 import React from 'react';
 import * as Facebook from 'expo-facebook';
 import * as Google from 'expo-google-app-auth';
-import {TouchableOpacity, TextInput, TouchableHighlight, KeyboardAvoidingView, StyleSheet, Text, View, Image, ScrollView, TouchableWithoutFeedback, Keyboard} from 'react-native';
+import {TouchableOpacity, StyleSheet, Text, View, Image, ScrollView, TouchableWithoutFeedback, Keyboard} from 'react-native';
 import {f, auth, database, storage} from '../../config/config.js';
 import * as Permissions from 'expo-permissions';
 import * as ImagePicker from 'expo-image-picker';
@@ -222,11 +222,10 @@ class UserAuth extends React.Component{
                                 placeholder={'Password'}
                                 onChangeText={(text) => this.setState({pass: text})}
                                 value={this.state.pass}/>
-                                <TouchableOpacity 
-                                onPress={() => this.login()}
-                                style={styles.accessButton}>
-                                    <Text>Login</Text>
-                                </TouchableOpacity>
+                                <Button 
+                                    onPress={() => this.login()}
+                                    style={styles.accessButton} message={'Login'}>
+                                </Button>
 
                                 <Text style={{marginVertical: 10, textAlign: 'center', fontWeight: 'bold'}}>or</Text>
 
@@ -285,11 +284,11 @@ class UserAuth extends React.Component{
                                         placeholder={'Password'}
                                         onChangeText={(text) => this.setState({pass: text})}
                                         value={this.state.pass}/>
-                                    <TouchableOpacity 
+                                    <Button 
                                         onPress={() => this.signUp()}
-                                        style={styles.accessButton}>
-                                        <Text>Sign Up</Text>
-                                    </TouchableOpacity>
+                                        style={styles.accessButton} message={'Sign UP'}>
+                                        
+                                    </Button>
 
                                     <Text style={{marginVertical: 10, textAlign: 'center', fontWeight: 'bold'}}>or</Text>
                                     
@@ -311,11 +310,8 @@ class UserAuth extends React.Component{
 
 const styles = StyleSheet.create({
     accessButton:{
-        width:250,  
-        paddingHorizontal: 20, 
-        paddingVertical: 10, 
-        borderColor: 'grey', 
-        borderRadius: 10
+        width:'100%',
+        textAlign:'center'
     },
     cancel:{
         borderBottomWidth: 1, 
