@@ -7,20 +7,7 @@ import { Ionicons, AntDesign } from '@expo/vector-icons';
 const FacebookLogin = props => {
 
 
-       //check if facebook account already exists 
-    const isFacebookUserEqual = ( facebookAuthResponse, firebaseUser) => {
-        if (firebaseUser) {
-          var providerData = firebaseUser.providerData;
-          for (var i = 0; i < providerData.length; i++) {
-            if (providerData[i].providerId === f.auth.FacebookAuthProvider.PROVIDER_ID &&
-                providerData[i].uid === facebookAuthResponse.userID) {
-              // We don't need to re-auth the Firebase connection.
-              return true;
-            }
-          }
-        }
-        return false;
-      }
+       
 
         //Sign up and Login with Facebook
     const loggingWithFacebook = async() => {
@@ -63,6 +50,20 @@ const FacebookLogin = props => {
                 }
             
           }
+    //check if facebook account already exists 
+    const isFacebookUserEqual = ( facebookAuthResponse, firebaseUser) => {
+        if (firebaseUser) {
+          var providerData = firebaseUser.providerData;
+          for (var i = 0; i < providerData.length; i++) {
+            if (providerData[i].providerId === f.auth.FacebookAuthProvider.PROVIDER_ID &&
+                providerData[i].uid === facebookAuthResponse.userID) {
+              // We don't need to re-auth the Firebase connection.
+              return true;
+            }
+          }
+        }
+        return false;
+      }
 
     return (
 

@@ -9,7 +9,8 @@ class userProfile extends React.Component{
     constructor(props){
         super(props);
         this.state ={
-            loadded: false
+            loadded: false,
+            isFriend: false
         }
     }
 
@@ -65,16 +66,11 @@ class userProfile extends React.Component{
                     </View>
                 ) : (
                     <View style={{flex: 1}}>
-                        {/* <TouchableOpacity
-                            style={{width:100}} 
-                            onPress={() => this.props.navigation.goBack()}>
-                                <Text style={{fontSize: 12, fontWeight: 'bold', paddingLeft: 10}}>Back</Text>
-                            </TouchableOpacity> */}
-                            <Headers title='Profile' onPress={() => this.props.navigation.goBack()} back='back'>
-                                
-                            </Headers>
-                            
                         
+                        <Headers title='Profile' onPress={() => this.props.navigation.goBack()} back='back'>
+                                
+                        </Headers>
+
                         <View style={{paddingLeft: 15, alignItems: 'center', flexDirection: 'row', paddingVertical: 10}}>
                             <Image source={{ url:this.state.photoURL}} style={{width: 100, height: 100, borderRadius: 50}}></Image>
                             <View style={{marginRight: 50, paddingLeft: 10}}>

@@ -6,8 +6,6 @@ import Input from '../components/Input';
 import Colors from '../components/constants/colors';
 // import FilePickerManager from '..react-native-file-picker'
 import * as DocumentPicker from 'expo-document-picker';
-import { sendGridEmail } from 'react-native-sendgrid'
-import functions from '@firebase/functions';
 
 
 class Form extends React.Component{
@@ -18,10 +16,11 @@ class Form extends React.Component{
             name:'',
             email:'',
             phone:'',
-            recipient:'',
-            subject:'',
+            text: [],
+            recipient:'fsantost.050793@gmail.com',
+            subject:'Testing SendGrid',
             text:'',
-            sender:'',
+            sender:'fsantost.050793@gmail.com',
             description:'',
             documentSelected:'',
             document:'',
@@ -31,47 +30,25 @@ class Form extends React.Component{
         }
     }
 
-    sendEmail = () => {
-        const {email} = this.state;
-        fetch('http://127.0.0.0:4000/send-email?recipient='+email.recipient+'&sender='+email.sender+'&topic='+email.subject+'&text='+email.text+'')
-        .catch(error => console.log(error));
+    sendEmail = async () => {
+
+        try{
+
+            var http = new XMLHttpRequest();
+            http.open('GET', 'http://192.168.0.88:4000/send-email?recipient='+this.state.recipient+'&sender='+this.state.sender+'&topic='+this.state.subject+
+            '&text= Contact Email: '+this.state.email+ ' Contact Name: ' + this.state.name+
+            ' Contact Number: ' + this.state.phone+ ' Description: ' + this.state.description+ ' Document: ' + this.state.document+'');
+            http.send();
+            http.onreadystatechange = (e) => {
+                var response = http.responseText;
+                console.log('Success', response);
+            };
+
+        }catch (error) {
+            console.error(error);
+        }
     }
 
-    msg =() => {
-
-        let transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: 'fsantost.050793@gmail.com',
-                pass: 'centrodeimagem'
-            }
-        })
-
-        // const SandGridAPI = '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';
-        // const FromEmail = 'fsantost.050793@gmail.com';
-        // const ToEmail = 'fsantost.050793@gmail.com';
-        // const Subject = 'Sending First Email';
-
-        // // SendGrid.setApiKey(process.env.SENDGRID_API_KEY)
-        const text = {
-            name: 'Contact Name:' +this.state.name,
-            phone: 'Contact Number: ' +this.state.phone,
-            description: 'Description' + this.state.description,
-            document: this.state.document
-        };
-
-        const mailOptions = {
-            to: 'fsantost.050793@gmail.com',
-            from: this.state,email,
-            subject: 'Sending email is Fun',
-            text: text,
-            html: '<strong>and easy to do anywhere, even with Node.js</strong>',
-          };
-
-    
-          
-    }
-    
     pickDocument = async () => {
         let result = await DocumentPicker.getDocumentAsync({
             copyToCacheDirectory: true,
@@ -141,8 +118,8 @@ class Form extends React.Component{
                     autoCorrect={true}
                     multiline={false}
                     numberOfLines={1}
-                    value={this.state.email}
                     onChangeText={(text) => this.setState({email:text})}
+                    value={this.state.email}
                     style={styles.inputText}/>
 
                 <Input
@@ -153,8 +130,8 @@ class Form extends React.Component{
                     autoCorrect={true}
                     multiline={false}
                     numberOfLines={1}
-                    value={this.state.phone}
                     onChangeText={(text) => this.setState({phone: text})}
+                    value={this.state.phone}
                     style={styles.inputText}/>
 
                 <Input
@@ -164,8 +141,8 @@ class Form extends React.Component{
                     autoCorrect={true}
                     multiline={true}
                     numberOfLines={5}
-                    value={this.state.description}
                     onChangeText={(text) => this.setState({description: text})}
+                    value={this.state.description}
                     style={{...styles.inputText, height:70}}/>
                 
                 <Text style={styles.documentText}>Or</Text>
@@ -175,14 +152,14 @@ class Form extends React.Component{
                     <Text style={styles.documentText}>{this.state.document}</Text>
                 </View>
 
-                <Input
+                {/* <Input
                     editable={true}
                     placeholder={'Please Enter Your name...'}
                     maxLenght={50}
                     autoCorrect={true}
                     multiline={false}
                     numberOfLines={1}
-                    style={styles.inputText}/> 
+                    style={styles.inputText}/>  */}
                     
                     <Button message={'Apply'} style={styles.button} onPress={() => this.sendEmail()}></Button>                    
                 </ScrollView>

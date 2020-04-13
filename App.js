@@ -2,6 +2,9 @@ import React from 'react';
 import {  StyleSheet, Text, View, TouchableHighlight, TextInput } from 'react-native';
 import {f, auth, database, storage} from './config/config.js'
 import { createStackNavigator, createBottomTabNavigator} from 'react-navigation'
+import * as Permissions from 'expo-permissions';
+import { Notifications } from 'expo';
+import Constants from 'expo-constants';
 
 import Feed from './app/screens/Feed.js';
 import Profile from './app/screens/Profile.js';
@@ -86,34 +89,69 @@ const MainStack = createStackNavigator(
 export default class App extends React.Component {
 
   
-  constructor(props)
-  {
+  constructor(props){
     super(props);
     this.state = {
       loggedin: false
     
     }
-    //this.registerUser('fernando@gmail.com', 'fernando');
+  }
+
+  componentDidMount =() => {
     var that = this;
     f.auth().onAuthStateChanged(function(user){
       if(user){
-        //Logged in
-      
+        //Logged in 
         that.setState({
-          loggedin: true
-        });
-        console.log('Logged in', user);
-
+          loggedin: true});
+        console.log(user.email);
+        that.registerPushNotificationAsync(user);
+        
       }else{
-        //Logged out
-
+            //logged out
         that.setState({
           loggedin: false
         });
-        console.log('Logged out', user);
-
       }
+      
     });
+    
+  } 
+
+  registerPushNotificationAsync = async (user) => {
+
+    if (Constants.isDevice) {
+      const { status: existingStatus } = await Permissions.getAsync(Permissions.NOTIFICATIONS);
+      let finalStatus = existingStatus;
+      if (existingStatus !== 'granted') {
+        const { status } = await Permissions.askAsync(Permissions.NOTIFICATIONS);
+        finalStatus = status;
+      }
+      if (finalStatus !== 'granted') {
+        alert('Failed to get push token for push notification!');
+        return;
+      }
+      token = await Notifications.getExpoPushTokenAsync();
+      console.log(token);
+      this.setState({ expoPushToken: token });
+
+      var updates = {};
+      updates['/expoToken']  = token
+      f.database().ref('users').child(user.uid).update(updates);
+
+    } else {
+      alert('Must use physical device for Push Notifications');
+    }
+
+    if (Platform.OS === 'android') {
+      Notifications.createChannelAndroidAsync('default', {
+        name: 'default',
+        sound: true,
+        priority: 'max',
+        vibrate: [0, 250, 250, 250],
+      });
+    }
+
   }
 
 
@@ -126,13 +164,4 @@ export default class App extends React.Component {
     );
   } 
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
 
