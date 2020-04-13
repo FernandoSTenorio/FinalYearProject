@@ -25,7 +25,7 @@ const FacebookLogin = props => {
                     console.log('Facebook User' , JSON.stringify(currentUser));
                     JSON.stringify(currentUser);
     
-                    // Check if we are already signed-in Firebase with the correct user.
+                    // Check if user is already signed-in.
                     if(!isFacebookUserEqual(credentials, currentUser)){
                         // Build Firebase credential with the Facebook auth token.
                         f.auth.FacebookAuthProvider.credential(

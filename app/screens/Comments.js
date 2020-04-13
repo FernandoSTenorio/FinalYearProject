@@ -131,18 +131,8 @@ class Comments extends React.Component{
                 comment: comment,
                 photoId: imageId
             }
-
-            // database.ref('/photos/'+imageId + '/comments/' + commentId).set(commentObj);
-
+            
             database.ref('/comments/'+imageId+'/'+commentId).set(commentObj);
-
-            // const increment = f.firestore.FieldValue.increment(1);
-            // const stoyryRef = f.firestore().collection('comments').doc(`${Math.random()}`);
-            // const statsRef = f.firestore().collection('comments').doc(imageId);
-            // const batch = f.firestore().batch();
-            // batch.set(stoyryRef, {title: comment});
-            // batch.set(statsRef, {comments: increment} , {merge:true});
-            // batch.commit();
 
             f.database().ref('photos').child(imageId).child('comments').transaction((comments) => {
                 return (comments || 0) +1;

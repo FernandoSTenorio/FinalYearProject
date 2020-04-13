@@ -2,7 +2,9 @@ import React from 'react';
 import { TouchableOpacity, Flatlist, StyleShee, Text, View, Image} from 'react-native';
 import {f, auth, database, storage} from '../../config/config.js'
 import PhotoList from '../components/PhotoList.js';
-import Headers from '../components/Headers'
+import Headers from '../components/Headers';
+import Button from '../components/Button';
+import {Entypo, MaterialIcons} from '@expo/vector-icons';
 
 class userProfile extends React.Component{
 
@@ -10,7 +12,11 @@ class userProfile extends React.Component{
         super(props);
         this.state ={
             loadded: false,
-            isFriend: false
+            isFriend: false,
+            requestSent:false,
+            requestId: this.uniqueId(),
+            senderUser: f.auth().currentUser.uid,
+            requestReceived: false
         }
     }
 
@@ -23,10 +29,97 @@ class userProfile extends React.Component{
                     userId: params.userId
                 });
                 this.fectchUserInfo(params.userId);
+                this.checkUserRequest(params.userId);
             }
         }
+       
 
     }
+    s4 = () => {
+        return Math.floor((1 + Math.random()) * 0x10000)
+        .toString(16).substring(1)
+    }
+
+    uniqueId = () => {
+        return this.s4() + this.s4() + '-' + this.s4() + '-' + this.s4() +'-' +
+        this.s4() + this.s4() + '-' + this.s4() + '-' + this.s4();
+    }
+
+    checkUserRequest = (userId) => {
+        var senderId = this.state.senderUser;
+        var ref = f.database().ref('frienRequest');
+        ref.once('value').then(snap => {
+            var checkUserRequest = snap.child(userId).child(senderId).exists();
+            if(checkUserRequest){
+                
+                this.setState({
+                    requestSent: true
+                });
+            }else if(userId == senderId) {
+                this.setState({
+                    isUser: true
+                });
+            }
+        })
+    }
+
+    sendFriendRequest = (userId) => {
+
+        var receiverId = userId;
+        if(receiverId){
+
+            var senderId = this.state.senderUser;
+            var requestId = this.state.requestId;
+
+            var requestObj = {
+                request_type: 'received'
+            };
+
+            var ref = f.database().ref('frienRequest');
+
+            ref.once('value').then(snapshot => {
+                var checkUserRequest = snapshot.child(receiverId).child(senderId).exists();
+                if(checkUserRequest){
+                    console.log(checkUserRequest);
+                    this.setState({
+                        requestSent: true
+                    })
+                }else{
+                    database.ref('/frienRequest/'+ '/' + receiverId + '/' + senderId + '/' + requestId).set(requestObj);
+
+                    this.setState({
+                        isFriend: false,
+                        requestSent: true
+                    })
+                }
+            })
+
+            
+        }       
+    }
+
+    accecptRequest = (senderId) => {
+        var currentUser = f.auth().currentUser.uid;
+        var ref = f.database().ref('frienRequest');
+        ref.once('value').then(snap => {
+            var checkFriendRequest = snap.child(senderId).child(currentUser).child(this.state.requestId).child('request_type').val();
+            
+            if(checkFriendRequest){
+                this.setState({
+                    requestReceived: true
+                })
+                console.log(checkFriendRequest);
+            }
+            
+        })
+    }
+
+    cancelRequest = () => {
+        var senderUser  = this.state.senderUser
+        let ref = database.ref('frienRequest' + '/' + this.state.userId + '/' + senderUser);
+        ref.remove();
+        this.setState({requestSent: false});
+    } 
 
     fectchUserInfo = (userId) => {
         var that = this;
@@ -48,6 +141,10 @@ class userProfile extends React.Component{
             that.setState({photoURL:data,
             loadded:true});
         }).catch(error => console.log(error));
+        that.setState({
+            receiverId: userId
+        })
+        
    
     }
 
@@ -77,6 +174,43 @@ class userProfile extends React.Component{
                                 <Text>{this.state.displayName}</Text>
                                 <Text>{this.state.username}</Text>
                             </View>
+                            {this.state.isUser == true ? (
+                                <View></View>
+                            ) : (
+                                
+                                <View>
+                                {this.state.requestReceived === true ? (
+                                    <View>
+                                        <Button onPress={() => this.accecptRequest(this.state.senderUser)} message={'Accept'}></Button>
+                                    </View>
+                                ) : (
+                                    <View>
+                                    {this.state.requestSent == true ? (
+                                        <View style={{marginRight:50}}>
+                                            <Button onPress={() => this.cancelRequest()} style={{alignItems:'center', alignContent:'center'}}>
+                                                <MaterialIcons 
+                                                    name={'cancel'}
+                                                    size={25}
+                                                    color={'white'}/>
+                                            </Button>
+                                        </View>
+                                        
+                                    ) : (
+                                        <View>
+                                            <Button onPress={() => this.sendFriendRequest(this.state.receiverId)} >
+                                                <Entypo
+                                                    name={'add-user'}
+                                                    size={20}
+                                                    color={'white'}/>
+                                            </Button>
+                                        </View>
+                                    )}
+                                    </View>
+                                )}
+                                
+                                </View>
+                            )}
+                            
                         </View>
                         <PhotoList isUser={true} userId={this.state.userId} navigation={this.props.navigation}></PhotoList>  
                     </View>
