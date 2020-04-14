@@ -30,6 +30,8 @@ class userProfile extends React.Component{
                 });
                 this.fectchUserInfo(params.userId);
                 this.checkUserRequest(params.userId);
+                this.checkIfUsersAreFriends();
+                
             }
         }
        
@@ -46,7 +48,7 @@ class userProfile extends React.Component{
     }
 
     checkUserRequest = (userId) => {
-        var senderId = this.state.senderUser;
+        var  senderId= this.state.senderUser;
         var ref = f.database().ref('frienRequest');
         ref.once('value').then(snap => {
             var checkUserRequest = snap.child(userId).child(senderId).exists();
@@ -59,7 +61,21 @@ class userProfile extends React.Component{
                 this.setState({
                     isUser: true
                 });
+            }else{
+
             }
+        })
+
+        f.database().ref('frienRequest').child(userId).child(senderId).orderByChild('request_type').equalTo('received')
+        .once('value').then(snapshot => {
+            //console.log(snapshot.val());
+            snapshot.forEach((data) =>{
+                console.log(data.val());
+                this.setState({
+                    requestReceived:true
+                });
+            });
+
         })
     }
 
@@ -71,9 +87,12 @@ class userProfile extends React.Component{
             var senderId = this.state.senderUser;
             var requestId = this.state.requestId;
 
-            var requestObj = {
-                request_type: 'received'
+            var requestSent = {
+                request_type: 'sent'
             };
+            var requestReceived ={
+                request_type: 'received'
+            }
 
             var ref = f.database().ref('frienRequest');
 
@@ -85,10 +104,9 @@ class userProfile extends React.Component{
                         requestSent: true
                     })
                 }else{
-                    database.ref('/frienRequest/'+ '/' + receiverId + '/' + senderId + '/' + requestId).set(requestObj);
-
+                    database.ref('/frienRequest/'+ '/' + receiverId + '/' + senderId + '/' + requestId).set(requestSent);
+                    database.ref('/frienRequest/'+ '/' + senderId  + '/' + receiverId+ '/' + requestId).set(requestReceived);
                     this.setState({
-                        isFriend: false,
                         requestSent: true
                     })
                 }
@@ -98,26 +116,53 @@ class userProfile extends React.Component{
         }       
     }
 
-    accecptRequest = (senderId) => {
-        var currentUser = f.auth().currentUser.uid;
-        var ref = f.database().ref('frienRequest');
-        ref.once('value').then(snap => {
-            var checkFriendRequest = snap.child(senderId).child(currentUser).child(this.state.requestId).child('request_type').val();
-            
-            if(checkFriendRequest){
+    accecptRequest = (currentUser) => {
+        var senderId = this.state.senderUser;
+        var  date = new Date();
+        let outputTime = date.getDate() + " / " + (date.getMonth()+1) + " / " + (date.getFullYear());
+        database.ref('/friends/'+ '/' + senderId + '/' + currentUser+ '/' + 'date').set(outputTime)
+        .then(() => {
+            database.ref('/friends/'+ '/' + currentUser + '/' + senderId + '/' +'date').set(outputTime)
+            .then(() => {
                 this.setState({
-                    requestReceived: true
+                    isFriend: true
                 })
-                console.log(checkFriendRequest);
+                this.cancelRequest();
+            })
+        });
+
+        // f.database().ref('users').child(currentUser).child('friends').transaction((friends) => {
+        //     return (friends || 0) +1;
+        // })
+        // f.database().ref('users').child(senderId).child('friends').transaction((friends) => {
+        //     return (friends || 0) +1;
+        // })
+
+        
+        
+    }
+
+    checkIfUsersAreFriends = () => {
+
+        var friendRef = f.database().ref('friends');
+        friendRef.once('value').then(snapshot => {
+            var checkFriends = snapshot.child(this.state.senderUser).child(this.state.userId).exists();
+            var checkFriends1 = snapshot.child(this.state.userId).child(this.state.senderUser).exists();
+
+            if(checkFriends && checkFriends1){
+                this.setState({
+                    isFriend: true
+                })
             }
-            
-        })
+        });
     }
 
     cancelRequest = () => {
         var senderUser  = this.state.senderUser
         let ref = database.ref('frienRequest' + '/' + this.state.userId + '/' + senderUser);
+        let ref1 = database.ref('frienRequest' + '/' + senderUser + '/' + this.state.userId);
         ref.remove();
+        ref1.remove();
         this.setState({requestSent: false});
     } 
 
@@ -179,9 +224,14 @@ class userProfile extends React.Component{
                             ) : (
                                 
                                 <View>
+                                {this.state.isFriend == true ? (
+                                    <View><Text>Friends</Text></View>
+                                ) : (
+
+                                    <View>
                                 {this.state.requestReceived === true ? (
                                     <View>
-                                        <Button onPress={() => this.accecptRequest(this.state.senderUser)} message={'Accept'}></Button>
+                                        <Button onPress={() => this.accecptRequest(this.state.userId)} message={'Accept'}></Button>
                                     </View>
                                 ) : (
                                     <View>
@@ -209,6 +259,9 @@ class userProfile extends React.Component{
                                 )}
                                 
                                 </View>
+                                )}
+                                </View>
+                                
                             )}
                             
                         </View>
