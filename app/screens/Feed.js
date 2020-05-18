@@ -1,21 +1,11 @@
 import React, { useState } from 'react';
-import { TouchableOpacity, FlatList, StyleSheet, Text, View, Image} from 'react-native';
-import {f, auth, database, storage} from '../../config/config.js'
+import { TouchableOpacity, Text, View} from 'react-native';
 import PhotoList from '../components/PhotoList.js';
 import Headers from '../components/Headers';
 import Colors from '../components/constants/colors'
 import {AntDesign} from '@expo/vector-icons';
 
 const Feed  = props =>{
-
-    const refresh = useState(false);
-    const photo_feed = useState([])
-    const loading = useState(true);
-
-    const componentDidMount = () => {
-
-    }
-
     
         return(
             <View style={{flex: 1}}>

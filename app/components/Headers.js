@@ -4,6 +4,7 @@ import Colors from '../components/constants/colors'
 
 const Header = props => {
     return (
+        //This is the Worthy Smile Header, and can be changed according to the screen that is using it
         <View {...props} style={{...styles.header,...props.style}}>
             <TouchableOpacity {...props} style={{...props.style}}>
                 <Text style={{...styles.backText,...props.style}}>{props.back}</Text>

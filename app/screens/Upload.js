@@ -1,69 +1,57 @@
-import React, {useState} from 'react';
+import React from 'react';
 import {TextInput, ActivityIndicator, TouchableOpacity, StyleSheet, Text, View, Image, ScrollView, Modal} from 'react-native';
 import {f, auth, database, storage} from '../../config/config.js'
-import * as Permissions from 'expo-permissions';
 import * as ImagePicker from 'expo-image-picker';
 import UserAuth from '../components/Auth.js'
 import { MaterialIcons } from '@expo/vector-icons';
 import Headers from '../components/Headers';
 import Button from '../components/Button';
 import Colors from '../components/constants/colors';
+import {_checkPermission, uniqueId} from '../helpers/Helpers';
 class Upload extends React.Component{
     constructor(props){
         super(props);
         this.state ={
             loggedin: false,
-            imageId: this.uniqueId(),
+            imageId: uniqueId(),
             imageSelected: false,
             uploading: false,
             caption: '',
             progress: 0,
+            photoURL: '',
             modalVisible: false
         }
+        
     }
 
+    /**
+     * This function sets whether the modal is visible or not
+     */
     setModalVisible = (modalVisible) => {
         this.setState({
             modalVisible: modalVisible
         })
     }
 
-    setModalVisible
-
-    //Check the the user has permissions to access either camera and the camera roll
-    _checkPermission = async () =>{
-        const {status} = await Permissions.askAsync(Permissions.CAMERA);
-        this.setState({camera:status});
-        const {statusRoll} = await Permissions.askAsync(Permissions.CAMERA_ROLL);
-        this.setState({cameraRoll:statusRoll});
-
-    }
-
-    //return a sequence of random letters and numbers, to allow us to get a completly random string
-    s4 = () => {
-        return Math.floor((1 + Math.random()) * 0x10000)
-        .toString(16).substring(1);
-    }
-
-
-    uniqueId = () => {
-        return this.s4() + this.s4() + '-' + this.s4() + '-' + this.s4() +'-' +
-        this.s4() + this.s4() + '-' + this.s4() + '-' + this.s4();
-    }
-
+    /**
+     * This functions opens the user camera in order to take picture
+     */
     takePhoto = async () => {
-        this._checkPermission();
+        _checkPermission();
 
+        //check if the image picker is opened up
+        //variable that is assigned to the image picked 
         let result = await ImagePicker.launchCameraAsync({
             mediaTypes: 'Images',
             allowsEditing: true,
             quality: 1
         });
 
+        //check if canceled is false, then continue picking the image
         if(!result.cancelled){
             this.setState({
                 imageSelected: true,
-                imageId: this.uniqueId(),
+                imageId: uniqueId(),
                 uri: result.uri
             });
         }else{
@@ -74,9 +62,14 @@ class Upload extends React.Component{
         
     }
 
-    finfNewImage = async () => {
-        this._checkPermission();
+    /**
+     * This function opens the mobile galery to select a picture
+     */
+    findNewImage = async () => {
+        _checkPermission();
 
+        //check if the image picker is opened up
+        //variable that is assigned to the image picked 
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: 'Images',
             allowsEditing: true,
@@ -85,12 +78,13 @@ class Upload extends React.Component{
 
         console.log(result);
 
+        //check if canceled is false, then continue picking the image
         if(!result.cancelled){
 
             console.log('upload image');
             this.setState({
                 imageSelected: true,
-                imageId: this.uniqueId(),
+                imageId: uniqueId(),
                 uri: result.uri
             });
 
@@ -102,28 +96,33 @@ class Upload extends React.Component{
         }
     }
 
+    /**
+     * Async function used to upload the image to Firebase Storage
+     */
     uploadImage = async (uri) => {
-
         var that = this;
         var userId = f.auth().currentUser.uid;
         var imageId = this.state.imageId;
 
         //set Extension of the file, look for sequance of Characters that matches the last .
         var re = /(?:\.([^.]+))?$/;
-        var ext = re.exec(uri)[1];
+        var ext = re.exec(uri)[1];//eg.image.pgn
         this.setState({
             currentFileType: ext,
             uploading: true
         });
         //create a fetch call to the image uri
         const response = await fetch(uri)
-        //return the response into a blob
+        //return the response into a blob used to upload into Firebase Storage
         const blob = await response.blob();
         var FilePath = imageId+'.'+that.state.currentFileType;
 
+        //create a reference to sorage
         const uploadTask = storage.ref('users/'+userId+'/img').child(FilePath).put(blob);
 
+        //fetch information from storage
         uploadTask.on('state_changed', (snapshot) => {
+            //check how many bytes are being uploaded
             var progress = ((snapshot.bytesTransferred / snapshot.totalBytes) * 100).toFixed(0);
             console.log('Upload is ' +progress+'% comlete');
             that.setState({
@@ -155,8 +154,10 @@ class Upload extends React.Component{
         
     }
 
-    //create the Objects that will be uploeaded to firebase
-    processUpload = (imageURL) => {
+    /**
+     * create the Objects that will be uploeaded to firebase
+     */
+    processUpload = async (imageURL) => {
         var that = this;
     
         //set needed objects
@@ -167,8 +168,7 @@ class Upload extends React.Component{
         var dateTime = Date.now();
         var timestamp = Math.floor(dateTime / 1000);
         
-        //Build Photo Object
-        //author, caption, posted, url
+        //create a photo objects
         var photoObjs = {
             author: userId,
             caption: caption,
@@ -177,15 +177,12 @@ class Upload extends React.Component{
             photoURL: photoURL
         };
 
-        //Update database
-        
-
         //Add to feed
         database.ref('/photos/' +imageId).set(photoObjs);
 
         //Set user photo objects
         database.ref('/users/'+userId+'/photos/' +imageId).set(photoObjs);
-
+ 
         alert('Image Uploaded');
 
         this.setState({
@@ -198,16 +195,19 @@ class Upload extends React.Component{
 
     }
 
+    /**
+     * Checks whether the user is logged in or not
+     */
     componentDidMount = () => {
         var that = this;
         f.auth().onAuthStateChanged(function(user){
             if(user){
-                //Logged in 
+                
                 that.setState({
                     loggedin: true
                 });
+                
             }else{
-                //logged out
                 that.setState({
                     loggedin: false
                 });
@@ -243,7 +243,7 @@ class Upload extends React.Component{
                                         <View style={styles.modalView}>
                                             <Text style={styles.modalText}>Testing modal</Text>
                                             <Button onPress={() => this.takePhoto()} message={'Take Picture'}/>
-                                            <Button onPress={() => this.finfNewImage()} message={'Select Picture'}/>
+                                            <Button onPress={() => this.findNewImage()} message={'Select Picture'}/>
                                             <Button onPress={() => this.setModalVisible(!this.state.modalVisible)} message={'Hide it'}/>
                                             
                                         </View>
@@ -278,16 +278,15 @@ class Upload extends React.Component{
                                 <View style={styles.buttonContainer}>
                                     <Button onPress={() => this.uploadPublish()} message={'Post'}/>
                                 </View>
+                                {/* Checks if the uploading is true, if it is, displays on the screen */}
                                 { this.state.uploading == true ? (
                                     <View style={{margintTop: 10}}>
                                         <Text>{this.state.progress}%</Text>
                                         { this.state.progress != 100 ?(
+                                            //Check the process activity loadding 
                                             <ActivityIndicator size='small' color='blue' />
-
                                         ) : (
-                                          
                                             <Text>Processing</Text>
-                                            
                                         )}
                                     </View>
                                 ) : (
@@ -299,7 +298,6 @@ class Upload extends React.Component{
                         </ScrollView>
                     
                 ) : (
-
                     //logged out
                     <UserAuth message={'Please login to upload a picture'}></UserAuth>
 

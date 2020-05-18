@@ -4,6 +4,7 @@ import Colors from '../components/constants/colors'
 
 const Button = props => {
     return(
+        //Creates a Button component that will be used throughout the application
         <TouchableOpacity {...props} style={{...styles.facebookLokingButton, ...props.style}}>
         <Text  style={{...styles.text, ...props.style }}>{props.message}</Text>  
         {props.children}           

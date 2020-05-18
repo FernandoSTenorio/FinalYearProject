@@ -5,6 +5,7 @@ import timeConverter from '../components/TimerConverter.js';
 import {FontAwesome, AntDesign} from '@expo/vector-icons';
 import Colors from '../components/constants/colors';
 import Likes from '../components/Likes';
+import {uniqueId} from '../helpers/Helpers'
 
 class PhotoList extends React.Component{
     
@@ -21,11 +22,15 @@ class PhotoList extends React.Component{
         }
     }
 
+    /**
+     * Checks for photos parameters
+     */
     checkParams = () => {
 
+        //checkes for the navigation props screen
         var params = this.props.navigation.state.params;
-        if(params){
-            if(params.photoId){
+        if(params){//checks if parameters exists
+            if(params.photoId){//checks if photoId exists
                 this.setState({
                     photoId: params.photoId,
                 });
@@ -33,11 +38,14 @@ class PhotoList extends React.Component{
         }
     }
 
+    /**
+     * Function used to check if the users exists
+     */
     componentDidMount = () => {
 
         const { isUser, userId} = this.props;
 
-        if(isUser == true){
+        if(isUser == true){//checks if exists
             //Profile
             //userid
             this.loadFeed(userId);
@@ -49,13 +57,18 @@ class PhotoList extends React.Component{
          
     }
 
+    /**
+     * Add data from Firebase to the FlatList
+     */
     addToFlatList = (photo_feed, data, photo) => {
         var that = this;
         var photoObj = data[photo];
+                    //Fetch the data from Firebase
                     database.ref('users').child(photoObj.author).child('username').once('value').then(function(snapshot){
         
                         const exists = (snapshot.val() !== null);
-                        if(exists) data =snapshot.val();
+                        if(exists) data =snapshot.val();//check if the data existis
+                        //use the photo_feed array to push the data to the FlatList 
                         photo_feed.push({
                             id: photo,
                             url: photoObj.url,
@@ -78,22 +91,15 @@ class PhotoList extends React.Component{
 
     }
 
-    s4 = () => {
-        return Math.floor((1 + Math.random()) * 0x10000)
-        .toString(16).substring(1)
-    }
-
-    uniqueId = () => {
-        return this.s4() + this.s4() + '-' + this.s4() + '-' + this.s4() +'-' +
-        this.s4() + this.s4() + '-' + this.s4() + '-' + this.s4();
-    }
-
+    /**
+     * Checks if users has already liked a post
+     */
     checkForUser = (imageId, likeId, userId) => {
         let rootRef = f.database().ref('likes');
-
+        //Fetch into firebase to find user id
         rootRef.child(imageId).child(likeId).orderByChild('author').equalTo(userId)
         .once('value').then(snapshot => {
-            if(snapshot.exists()){
+            if(snapshot.exists()){//checks if data exists
                 let userId = snapshot.val();
                 console.log('You have already liked it', userId)
                 alert(userId);
@@ -102,35 +108,46 @@ class PhotoList extends React.Component{
         })
     }
 
+    /**
+     * This function is used to Like a photo
+     */
     postLike = (photoId) => {
 
+        //checks if photoId is not empty
         if(photoId!= ''){
             var userId = f.auth().currentUser.uid;
-            var likeId = this.uniqueId();
+            var likeId = uniqueId();
             
-            
+            //creates a like object
             var likeObj = {
                 author: userId,
                 imageId: photoId
             };
 
+            //fetch likes in the database
             var ref = f.database().ref('likes');
 
             ref.once('value')
             .then(snapshot => {
-                var userid = snapshot.child(photoId).child(userId).exists()
-                if(userid){
+                var userid = snapshot.child(photoId).child(userId).exists()//fist checks if users has liket the photo
+                if(userid){//checks if user Id exists
 
+                    //Fetch the users information
                     let ref = database.ref('/likes/'+'/'+photoId+'/'+userId);
+                    //remove the like from database
                     ref.remove();
 
+                    //decreases the amount of like to -1
                     f.database().ref('photos').child(photoId).child('likes').transaction((likes) => {
                         return (likes -1);
                     })
                     this.reloadPage();
-                }else{
+                }else{//if users has not liked the photo yet 
+
+                    //Creates a like object
                     database.ref('/likes/'+'/'+photoId+'/'+userId+'/'+likeId).set(likeObj);
 
+                    //increase the number of likes to +1
                     f.database().ref('photos').child(photoId).child('likes').transaction((likes) => {
                         return (likes || 0) +1;
                     })
@@ -144,25 +161,34 @@ class PhotoList extends React.Component{
         }
 
     }
+
+    /**
+     * Fetch the photos published into the Firebase by getting the user id
+     */
     loadFeed = (userId = '') => {
         this.setState({
             refresh:true,
             photo_feed: []
         });
         var that = this;
+
+        //Start to get the photo reference
         var loadRef = database.ref('photos');
-        if(userId != ''){
+        if(userId != ''){//Check if user ID is not null
+            //fetch data
             loadRef = database.ref('users').child(userId).child('photos');
         }
         loadRef.orderByChild('posted').once('value').then(function(snapshot) {
 
             const exists = (snapshot.val() !== null);
-            if(exists){ data =snapshot.val();
+            if(exists){ data =snapshot.val();//check if the data exists
                 var photo_feed = that.state.photo_feed;
 
+                //Loop through the data, check for each element found and return it as photo
                 for(var photo in data){
                     
                     that.setState({empty: false})
+                    //if data is found, add to flat list
                     that.addToFlatList(photo_feed,data, photo);
                     
                 }
@@ -173,11 +199,14 @@ class PhotoList extends React.Component{
         
     }
 
+    /**
+     * Reload the page when a user like a photo
+     */
     reloadPage = () => {
         this.setState({
             photo_feed: []
         });
-        this.loadFeed(this.state.userId)
+        this.loadFeed(this.state.userId);
 
     }
     
@@ -191,6 +220,7 @@ class PhotoList extends React.Component{
     {
         return(
             <View style={styles.container}>
+                {/* Checks if page is loadin */}
                 { this.state.loading == true ? (
                     <View style={styles.header}>
                         {this.state.empty == true ? (
@@ -224,10 +254,10 @@ class PhotoList extends React.Component{
                                 <Image source={{url: item.url }}style={styles.postImage}/>
                                 <TouchableOpacity
                                 onPress={ () => this.props.navigation.navigate('Comments', {photoId: item.id})}>
-                                    <View style={{flexDirection:'row', alignContent:'center', paddingLeft: 10}}>
+                                    <View style={styles.likeContainer}>
                                     <View>
                                         <Likes onPress={() => this.postLike(item.id)} refresh={this.state.refreshLike}>
-                                            
+
                                             {item.likes}
                                              
                                         </Likes>
@@ -325,6 +355,11 @@ const styles = StyleSheet.create({
         height: 200,
         borderRadius: 5,
         marginVertical: 16
+    },
+    likeContainer:{
+        flexDirection:'row', 
+        alignContent:'center', 
+        paddingLeft: 10
     }
 });
 

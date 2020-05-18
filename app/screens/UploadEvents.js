@@ -12,18 +12,42 @@ import { ThemeProvider } from 'styled-components';
 import Input from '../components/Input';
 import Headers from '../components/Headers';
 import Colors from '../components/constants/colors';
+import Button from '../components/Button';
+import {CheckBox} from 'native-base';
+import {_checkPermission, uniqueId} from '../helpers/Helpers';
 
 YellowBox.ignoreWarnings(['VirtualizedLists should never be nested']);
 class UploadEvents extends React.Component{
     constructor(props){
         super(props);
+        this.state ={
+            loggedin: false,
+            eventId: uniqueId(),
+            imageSelected: false,
+            uploading: false,
+            title: '',
+            description:'',
+            progress: 0,
+            eventPhoto: '',
+            vetting:'',
+            selectedValues: [],
+            outputTime: this.checkTime(),
+            outputDate: this.checkDate(),
+            type: '',
+            location: '',
+            selected: 0
+        
+        }
         this._handleChange = this._handleChange.bind(this);
     }
 
+    /**
+     * Check if the user is loggedin 
+     */
     componentDidMount = () => {
         var that = this;
         f.auth().onAuthStateChanged(function(user){
-            if(user){
+            if(user){//Checks if the users exists, if it does, set the state to logged in
                 //Logged in 
                 that.setState({
                     loggedin: true
@@ -37,15 +61,10 @@ class UploadEvents extends React.Component{
         });
     }
 
-    s4 = () => {
-        return Math.floor((1 + Math.random()) * 0x10000)
-        .toString(16).substring(1);
-    }
-
-    uniqueId = () => {
-        return this.s4() + this.s4() + '-' + this.s4() + '-' + this.s4() +'-' +
-        this.s4() + this.s4() + '-' + this.s4() + '-' + this.s4();
-    }
+   
+    /**
+     * This function checks current date, and shows it to the screen
+     */
     checkDate = () => {
         const today = new Date();
         const date = today;
@@ -56,6 +75,10 @@ class UploadEvents extends React.Component{
 
         return outputDate;
     }
+
+    /**
+     * This function checks the current time and shows it to the screen
+     */
     checkTime = () => {
         const today = new Date();
 
@@ -69,41 +92,15 @@ class UploadEvents extends React.Component{
         return outputTime;
     }
 
-    state ={
-        loggedin: false,
-        eventId: this.uniqueId(),
-        imageSelected: false,
-        uploading: false,
-        title: '',
-        description:'',
-        progress: 0,
-        eventPhoto: '',
-        vetting: [ 
-            {item: 'Yes', id:'Yes'},
-            {item: 'No', id: 'No'}
-        ],
-        selectedValues: [],
-        outputTime: this.checkTime(),
-        outputDate: this.checkDate(),
-        type: '',
-        location: ''
-    
-    }
-    
-    //Check the the user has permissions to access either camera and the camera roll
-    _checkPermission = async () =>{
-        const {status} = await Permissions.askAsync(Permissions.CAMERA);
-        this.setState({camera:status});
-        const {statusRoll} = await Permissions.askAsync(Permissions.CAMERA_ROLL);
-        this.setState({cameraRoll:statusRoll});
 
-    }
-
-    //return a sequence of random letters and numbers, to allow us to get a completly random string
-
+     /**
+     * This function opens the mobile galery to select a picture
+     */
     finfNewImage = async () => {
-        this._checkPermission();
+        _checkPermission();
 
+        //check if the image picker is opened up
+        //variable that is assigned to the image picked 
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: 'Images',
             allowsEditing: true,
@@ -117,7 +114,7 @@ class UploadEvents extends React.Component{
             console.log('upload image');
             this.setState({
                 imageSelected: true,
-                eventId: this.uniqueId(),
+                eventId: uniqueId(),
                 eventPhoto: result.uri
             });
 
@@ -133,13 +130,20 @@ class UploadEvents extends React.Component{
     processUpload = (eventPhoto) => {
         var that = this;
     
+        if(that.state.selected===1){
+            that.setState({vetting:'Yes'});
+        }else{
+            that.setState({vetting: 'No'})
+        }
+
         //set needed objects
         var eventId = this.state.eventId
         var userId = f.auth().currentUser.uid;
         var photoURL = f.auth().currentUser.photoURL;
-        var title = this.state.title;
+        var recipient = f.auth().currentUser.email;
+        var subject = this.state.title;
         var description = this.state.description;
-        var vetting = this.state.selectedValues;
+        var vetting = this.state.vetting;
         var outputTime = this.state.outputTime; 
         var outputDate = this.state.outputDate;
         var type = this.state.type;
@@ -147,11 +151,11 @@ class UploadEvents extends React.Component{
         var dateTime = Date.now();
         var timestamp = Math.floor(dateTime / 1000);
         
-        //Build Photo Object
+        //Build Event Object
         //author, caption, posted, url
         var eventObj = {
             author: userId,
-            title: title,
+            subject: subject,
             eventId: eventId,
             description: description,
             vetting: vetting,
@@ -161,7 +165,8 @@ class UploadEvents extends React.Component{
             location:location,
             posted: timestamp,
             eventPhoto: eventPhoto,
-            photoURL: photoURL
+            photoURL: photoURL,
+            recipient: recipient
         };
 
         //Update database
@@ -188,6 +193,10 @@ class UploadEvents extends React.Component{
 
     }
 
+    /**
+     * Handle the current date that is being parsed from the calendar
+     * @param {*Gets the current date} currentDate 
+     */
     _handleChange(currentDate){
 
     let outputDate = currentDate.getDate() + " / " + (currentDate.getMonth()+1) + " / " + (currentDate.getFullYear());
@@ -197,6 +206,9 @@ class UploadEvents extends React.Component{
         
     }
 
+    /**
+     * Function to upload the event picture to firebase storage
+     */
     uploadImage = async (eventPhoto) => {
 
         var that = this;
@@ -236,6 +248,9 @@ class UploadEvents extends React.Component{
     }
     
 
+    /**
+     * Function used to upload and publish the event
+     */
     uploadPublish = () => {
         //check if the caption text is empty
         if(this.state.caption !== ''){
@@ -327,7 +342,16 @@ class UploadEvents extends React.Component{
 
                                     <View style={{flexDirection:'row', paddingLeft: '8%', paddingTop: 20}}>
                                         <Text style={{ fontSize: 20, paddingRight: 10}}>Is Vetting Required?</Text>
-                                        <ThemeProvider theme={Colors1}>
+                                        <View style={{flexDirection: 'row'}}>
+                                        <Text style={{color:this.state.selectedLang===1?"#fc5185":"gray",fontWeight:this.state.selectedLang===1? "bold" :"normal"}}>Yes</Text>
+                                        <CheckBox style={{marginRight: '5%'}} checked={this.state.selected===1} onPress={() => this.setState({selected:1})}/>
+                                        
+                                    </View>
+                                    <View style={{flexDirection: 'row'}}>
+                                        <Text style={{marginRight:'1.5%', color:this.state.selectedLang===2?"#fc5185":"gray",fontWeight:this.state.selectedLang===2? "bold" :"normal"}}>No</Text>
+                                        <CheckBox checked={this.state.selected===2} onPress={() => this.setState({selected:2})}/>
+                                    </View>
+                                        {/* <ThemeProvider theme={Colors1}>
                                             <SelectBox
                                                 label={'Select'}
                                                 options={this.state.vetting}
@@ -337,14 +361,12 @@ class UploadEvents extends React.Component{
                                                 viewMargin="0 0 20px 0"
                                                 style={{paddingLeft: 15}}
                                                 />
-                                        </ThemeProvider> 
+                                        </ThemeProvider>  */}
                                     </View>
                                     
-
-                                    <TouchableOpacity onPress={ () => this.uploadPublish()}
-                                    style={{alignSelf:'center', width: 170, marginHorizontal:'auto', backgroundColor:'purple', borderRadius: 5, paddingVertical: 10, paddingHorizontal: 20}}>
-                                        <Text style={{textAlign:'center', color:'white'}}>Upload & Publish</Text>
-                                    </TouchableOpacity>
+                                    <View style={{alignSelf:'center', width: '90%', paddingTop: 20}}>
+                                    <Button style={{width: '100%', textAlign:'center'}} onPress={() => this.uploadPublish()} message={'Post'}/>
+                                    </View>
                                     { this.state.uploading == true ? (
                                         <View style={{margintTop: 10}}>
                                             <Text>{this.state.progress}%</Text>

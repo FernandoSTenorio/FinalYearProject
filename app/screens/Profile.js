@@ -15,33 +15,38 @@ class Profile extends React.Component{
         }
     }
 
+    /**
+     * Fetch user data from database
+     */
     fetchUserInfo = (userId) => {
         var that = this;
         database.ref('users').child(userId).once('value').then(function(snapshot){
 
             const exists = (snapshot.val() !==null);
-            if(exists) data = snapshot.val();
+            if(exists) {//checks if users exists
+                var data = snapshot.val();
                 that.setState({
                     username: data.username,
                     displayName: data.displayName,
                     photoURL: data.photoURL,
                     loggedin: true,
                     userId: userId
-
                     
                 });
+            }
                 
 
         });
 
     }
+    /**
+     * Checkes Whether the user is online or not
+     */
     componentDidMount = () => {
         var that = this;
-        f.auth().onAuthStateChanged(function(user){
-            if(user){
-                //Logged in 
-                that.fetchUserInfo(user.uid)
-              
+        f.auth().onAuthStateChanged(function(user){//checks for the user current state
+            if(user){//checkes if users exists
+                that.fetchUserInfo(user.uid);
             }else{
                 //logged out
                 that.setState({
@@ -51,25 +56,37 @@ class Profile extends React.Component{
         });
     }
 
+    /**
+     * Fuction used to Update profile, once the data has been typed, save the new data
+     */
     saveProfile = () => {
 
         var displayName = this.state.displayName;
         var username = this.state.username;
 
-        if(displayName !== ''){
+        if(displayName !== ''){//checks id the displayName is not Empty
             database.ref('users').child(this.state.userId).child('displayName').set(displayName);
         }
-        if(username !== ''){
+        if(username !== ''){//Checks if the Username is not empty
             database.ref('users').child(this.state.userId).child('username').set(username);
         }
         this.setState({editingProfile: false});
     }
 
+    /**
+     * Log the user out
+     */
     logoutUser = () => {
         f.auth().signOut();
         alert('Logout...')
+        this.setState({
+            loggedin:false
+        })
     }
 
+    /**
+     * Checks where the editingProfile state is true or false
+     */
     editProfile = () => {
         this.setState({editingProfile: true})
     }

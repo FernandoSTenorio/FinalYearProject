@@ -1,11 +1,14 @@
 import React from 'react';
-import {StyleSheet, Text, View, Image, ScrollView, TouchableWithoutFeedback, Keyboard} from 'react-native';
+import {StyleSheet, Text, View, Image, ScrollView, TouchableWithoutFeedback, Keyboard, KeyboardAvoidingView} from 'react-native';
 import Headers from '../components/Headers';
 import Button from '../components/Button';
+import {database} from '../../config/config.js'
 import Input from '../components/Input';
 import Colors from '../components/constants/colors';
 // import FilePickerManager from '..react-native-file-picker'
 import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system';
+import { async } from 'q';
 
 
 class Form extends React.Component{
@@ -16,9 +19,10 @@ class Form extends React.Component{
             name:'',
             email:'',
             phone:'',
+            eventId:'',
             text: [],
-            recipient:'fsantost.050793@gmail.com',
-            subject:'Testing SendGrid',
+            recipient:'',
+            subject:'',
             text:'',
             sender:'fsantost.050793@gmail.com',
             description:'',
@@ -29,33 +33,91 @@ class Form extends React.Component{
             uri:''
         }
     }
+    componentDidMount(){
+        var that = this;
+        that.checkParam()
+    }
 
+    /**
+     * Check for event parameters, in order to get the right id
+     */
+    checkParam = () => {
+        //checkes for the navigation props screen
+        var params = this.props.navigation.state.params;
+        if(params){//checks if parameters exists
+            if(params.eventId){//checks if eventId exists
+                this.setState({
+                    eventId: params.eventId
+                });
+                this.getEmail(params.eventId);
+            }
+        }
+
+    }
+    
+    /**
+     * This function fetchs the events information to get the poster's email and the event title
+     * @param {Getn event ID} eventId 
+     */
+    getEmail(eventId){
+        var that = this;
+        //fetch event data from database
+        database.ref('events').child(eventId).child('recipient').once('value').then(function (snapshot) {
+            const exists = (snapshot.val() !== null);
+            if(exists) data = snapshot.val();//check if data exists
+            that.setState({recipient:data});
+        }).catch(error => console.log(error));
+        database.ref('events').child(eventId).child('subject').once('value').then(function (snapshot) {
+            const exists = (snapshot.val() !== null);
+            if(exists) data = snapshot.val();
+            that.setState({subject:data});
+        }).catch(error => console.log(error));
+        
+        // console.log(this.state.userEmail);
+    }
+
+    /**
+     * This function creates the email that will be sending collected information from the form
+     * and sends it to the event provider
+     */
     sendEmail = async () => {
-
         try{
 
+            //initiates HTTP Request
             var http = new XMLHttpRequest();
-            http.open('GET', 'http://192.168.0.88:4000/send-email?recipient='+this.state.recipient+'&sender='+this.state.sender+'&topic='+this.state.subject+
+            //Open the local server, that is running the SendGrid API
+            http.open('GET', 'http://192.168.0.88:4000/send-email?recipient='+this.state.recipient+'&sender='+this.state.sender+'&topic=Event: '+this.state.subject+
             '&text= Contact Email: '+this.state.email+ ' Contact Name: ' + this.state.name+
-            ' Contact Number: ' + this.state.phone+ ' Description: ' + this.state.description+ ' Document: ' + this.state.document+'');
+            ' Contact Number: ' + this.state.phone+ ' Description: ' + this.state.description+ ' Document: ' + this.state.document+ ' Document Name: '+ this.state.documentName+'');
             http.send();
             http.onreadystatechange = (e) => {
                 var response = http.responseText;
                 console.log('Success', response);
+                
             };
+            console.log(this.state.recipient)
+            
 
         }catch (error) {
             console.error(error);
         }
+        
     }
 
+    /**
+     * This function selects a document from users directory, with information about (s)he
+     */
     pickDocument = async () => {
+
+        //check if the document picker is opened up
+        //variable that is assigned to the document picked 
         let result = await DocumentPicker.getDocumentAsync({
             copyToCacheDirectory: true,
             type: '*/*',
             
         });
 
+        //check if canceled is false, then continue picking the image
         if(!result.cancelled){
 
             let dcmt = {
@@ -64,16 +126,37 @@ class Form extends React.Component{
                 uri: result.uri,
                 document: result.name
             };
+            try{
+                //Download the file selected, to anble other users to read it
+                const downloadFile = FileSystem.downloadAsync(
+                    result.uri, FileSystem.documentDirectory + result.name
+                ).then(({ uri }) => {
+                    console.log('File Downloaded to ', uri);//check the path where the file was downloaded
+                    FileSystem.readAsStringAsync(uri).then(async fileResponse=> {
+                        console.log('The document read is ',fileResponse);
+                        this.setState({
+                            documentSelected: true,
+                            type: result.type,
+                            size: result.size,
+                            uri: downloadFile,
+                            documentName: result.name,
+                            document: fileResponse,
+            
+                        });
+                    })
+                    
+                }).catch(error => {
+                    console.log(error);
+                })
+                console.log(dcmt);
 
-            this.setState({
-                documentSelected: true,
-                type: result.type,
-                size: result.size,
-                uri: result.uri,
-                document: result.name
-            });
+            }catch(error){
+                console.log(error)
+            } 
 
-            console.log(dcmt);
+            
+
+            
 
         }else{
             console.log('cancel');
@@ -88,7 +171,8 @@ class Form extends React.Component{
 
     return(
         <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-            <ScrollView style={{flex:1, backgroundColor:'white', flexGrow:1}}>
+            
+            <KeyboardAvoidingView behavior="padding" enabled  style={styles.keyboarContainer}>
                 <View>
                     <Headers onPress={() => this.props.navigation.goBack()} back='back'>
                         <View style={{flex:1, alignSelf:'center'}}>
@@ -149,7 +233,7 @@ class Form extends React.Component{
                 
                 <View style={styles.documentContainer}>
                 <Button message={'Select a document'} onPress={() => this.pickDocument()}></Button>
-                    <Text style={styles.documentText}>{this.state.document}</Text>
+                    <Text style={styles.documentText}>{this.state.documentName}</Text>
                 </View>
 
                 {/* <Input
@@ -163,7 +247,7 @@ class Form extends React.Component{
                     
                     <Button message={'Apply'} style={styles.button} onPress={() => this.sendEmail()}></Button>                    
                 </ScrollView>
-            </ScrollView>
+            </KeyboardAvoidingView>
         </TouchableWithoutFeedback>
 
     );
@@ -179,6 +263,11 @@ const styles = StyleSheet.create({
         width: "90%",
         alignSelf:'center'
     },
+    keyboarContainer:{
+        flex:1, 
+        backgroundColor:'white', 
+        flexGrow:1
+    }, 
     documentText:{
         textAlign:'center',
         marginTop: 10,

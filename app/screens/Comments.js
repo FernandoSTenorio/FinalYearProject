@@ -1,8 +1,13 @@
 import React from 'react';
-import {TouchableOpacity, TextInput, KeyboardAvoidingView, FlatList, StyleSheet, Text, View, Image} from 'react-native';
-import {f, auth, database, storage} from '../../config/config.js'
+import {TouchableOpacity, KeyboardAvoidingView, FlatList, StyleSheet, Text, View, } from 'react-native';
+import {f, database} from '../../config/config.js'
 import UserAuth from '../components/Auth.js'
 import timeConverter from '../components/TimerConverter';
+import {uniqueId} from '../helpers/Helpers';
+import Button from '../components/Button';
+import Input from '../components/Input';
+import Headers from '../components/Headers';
+import Colors from '../components/constants/colors';
 
 class Comments extends React.Component{
     constructor(props){
@@ -14,12 +19,15 @@ class Comments extends React.Component{
         }
     }
 
-    //
+    /**
+     * Check the parameters, to check what data is going to be parsed to the comment screen
+     *  */ 
     checkParams = () => {
 
+        //checkes for the navigation props screen
         var params = this.props.navigation.state.params;
-        if(params){
-            if(params.photoId){
+        if(params){//checks if parameters exists
+            if(params.photoId){//checks if the photoId exists
                 this.setState({
                     photoId: params.photoId
                 });
@@ -27,28 +35,23 @@ class Comments extends React.Component{
             }
         }
     }
-    s4 = () => {
-        return Math.floor((1 + Math.random()) * 0x10000)
-        .toString(16).substring(1)
-    }
 
-    uniqueId = () => {
-        return this.s4() + this.s4() + '-' + this.s4() + '-' + this.s4() +'-' +
-        this.s4() + this.s4() + '-' + this.s4() + '-' + this.s4();
-    }
-    
+    /**
+     * Add comments to the FlatList
+     */
     addComments = (comments_list, data, comment) => {
 
         var that = this;
         var commentObj = data[comment];
-
+        
+        //Fetch users from database
         database.ref('users').child(commentObj.author).child('username').once('value').then(function(snapshot){
 
             
             const exists = (snapshot.val() !== null);
-            if(exists) data = snapshot.val();
+            if(exists) data = snapshot.val();//check if user exists
             
-            comments_list.push({
+            comments_list.push({//push comments existent to the FlatList
                 id: comment,
                 comment: commentObj.comment,
                 posted: commentObj.posted,
@@ -66,17 +69,21 @@ class Comments extends React.Component{
 
     }
 
+    /**
+     * Fetch Comments from databse 
+     */
     fectchComments = (photoId) => {
         var that = this;
+        //Fetch comments by its referenc and photoId
         database.ref('comments').child(photoId).orderByChild('posted').once('value').then(function(snapshot){
 
             const exists = (snapshot.val() !== null);
-            if(exists){
+            if(exists){//check if comments exists
                 //add comments to list
                 data = snapshot.val();
                 var comments_list = that.state.comments_list;
 
-                for(var comment in data){
+                for(var comment in data){//Loop trough the comments data and replace it with the variabels
                     that.addComments(comments_list, data, comment);
                     
                 }
@@ -90,10 +97,13 @@ class Comments extends React.Component{
         }).catch(error => console.log(error));
      }
 
+     /**
+      * Checks whether the user is logged in or not
+      */
     componentDidMount = () => {
         var that = this;
-        f.auth().onAuthStateChanged(function(user){
-            if(user){
+        f.auth().onAuthStateChanged(function(user){//Checks for users current state
+            if(user){//checks is users exists
                 //Logged in 
                 that.setState({
                     loggedin: true
@@ -109,15 +119,18 @@ class Comments extends React.Component{
         this.checkParams();
     }
 
+    /**
+     * Function used to post comment to database
+     */
     postComment = () => {
         //post comment according to userId
 
         var comment = this.state.comment;
-        if(comment != ''){
+        if(comment != ''){//checks is comment is empty
             //process the comment
             var imageId = this.state.photoId;
             var userId = f.auth().currentUser.uid;
-            var commentId = this.uniqueId();
+            var commentId = uniqueId();
             var dateTime = Date.now();
             var timeStamp = Math.floor(dateTime / 1000);
 
@@ -125,6 +138,7 @@ class Comments extends React.Component{
                 comment: ''
             });
 
+            //creates comment object
             var commentObj = {
                 posted: timeStamp,
                 author: userId,
@@ -132,8 +146,10 @@ class Comments extends React.Component{
                 photoId: imageId
             }
             
+            //add comment to the database
             database.ref('/comments/'+imageId+'/'+commentId).set(commentObj);
 
+            //Fetch photos and increase the amount of comments to +1
             f.database().ref('photos').child(imageId).child('comments').transaction((comments) => {
                 return (comments || 0) +1;
             })
@@ -145,6 +161,9 @@ class Comments extends React.Component{
         }
     }
 
+    /**
+     * Reload the page eveery time after user posts a comment
+     */
     reloadComment = () => {
         this.setState({
             comments_list: []
@@ -156,16 +175,13 @@ class Comments extends React.Component{
     {
         return(
             <View style={{flex: 1}}>
-            <View style={{flexDirection:'row', height: 70, paddingTop: 30, backgroundColor: 'white', borderColor: 'lightgrey', borderBottomWidh: 1.0, justifyContent: 'center', justifyContent: 'space-between',alignItems: 'center'}}>
-                <TouchableOpacity
-                style={{width:100}} 
-                onPress={() => this.props.navigation.goBack()}>
-                    <Text style={{fontSize: 12, fontWeight: 'bold', paddingLeft: 10}}>Back</Text>
-                </TouchableOpacity>
-                <Text>Comments</Text>
-                <Text style={{width:100}}></Text>
-            </View>
+                <Headers onPress={()=> this.props.navigation.goBack()} back='back' >
+                    <View style={{flex:1, justifyContent:'center'}}>
+                        <Text style={styles.title}>Comments</Text>
+                    </View>
+                </Headers>
 
+                {/* Checks whethere there are comment or not */}
                 {this.state.comments_list.length == 0 ? (
                     //is the lengh is 0, no comments tho be shown
                     <Text>No comments found...</Text>
@@ -177,41 +193,40 @@ class Comments extends React.Component{
                         keyExtractor={(item, index) => index.toString()}
                         style={{flex:1, backgroundColor: '#eee'}}
                         renderItem={({item, index}) => (
-                            <View key={index} style={{width: '100%', overflow: 'hidden', marginBottom: 5, justifyContent: 'space-between', borderBottomWidth: 1, borderColor: 'grey'}}>
-                                <View style={{padding: 5, width: '100%', flexDirection:'row', justifyContent: 'space-between'}}>
-                                    <Text>{timeConverter(item.posted)}</Text>
+                            <View key={index} style={styles.commentContainer}>
+                                <View style={styles.userProfile}>
+                                    <Text style={styles.timestamp}>{timeConverter(item.posted)}</Text>
                                     <TouchableOpacity
                                         onPress={ () => this.props.navigation.navigate('User', {userId: item.authorId})}>
-                                        <Text>{item.author}</Text>
+                                        <Text style={styles.postComment}>{item.author}</Text>
                                     </TouchableOpacity>
                                 </View>
-                                <View style={{padding: 5}}>
-                                    <Text>{item.comment}</Text>
+                                <View style={styles.commentView}>
+                                    <Text style={styles.postComment}>{item.comment}</Text>
                                 </View>
                             </View>
                         )}
-
                     />
-
                 )}
+                {/* Checks if the loading is true */}
                 { this.state.loggedin == true ? (
                     //logged in
-                    <KeyboardAvoidingView behavior="padding" enabled style={{borderTopColor: 'grey', borderTopWidth: 1, padding: 10, marginBottom: 15}}>
-                        <Text style={{fontWeight: 'bold'}}>Post Comment</Text>
+                    
+                    <KeyboardAvoidingView behavior="padding" enabled style={styles.postContainer}>
+                        <Text style={styles.postComment}>Post Comment</Text>
                         <View>
-                            <TextInput editable={true}
-                            placeholder={'enter your comment...'}
-                            onChangeText={(text) => this.setState({comment: text})}
+                        <Input
+                            editable={true}
+                            placeholder={'Please Enter Your Comment...'}
+                            maxLenght={50}
+                            autoCorrect={true}
+                            multiline={false}
+                            numberOfLines={1}
+                            onChangeText={text => this.setState({comment:text})}
                             value={this.state.comment}
-                            style={{marginVertical: 10, height: 50, padding: 5, borderColor: 'grey', borderRadius: 3, backgroundColor: 'white', padding: 10, marginBottom: 15}}>
-
-                            </TextInput>
+                            style={styles.inputText}/>
                         </View>
-                        <TouchableOpacity
-                            style={{paddingVertical: 10, paddingHorizontal: 20, backgroundColor: 'blue', borderRadius: 5}}
-                            onPress={() => this.postComment()}>
-                            <Text style={{color:'white'}}>Post</Text>
-                        </TouchableOpacity>
+                        <Button message={'Post Comment'} onPress={() => this.postComment()}/>
                     </KeyboardAvoidingView>
                     
                     
@@ -227,5 +242,59 @@ class Comments extends React.Component{
         );
     }
 }
+
+const styles = StyleSheet.create({
+    inputText:{
+        width: '90%',
+        height:40, 
+        alignSelf:'center'
+    },
+    postComment:{
+        fontSize: 15,
+        fontWeight: "500",
+        color: "#454D65"
+    },
+    postContainer:{
+        borderTopColor: 'grey', 
+        borderTopWidth: 1, 
+        padding: 10, 
+        marginBottom: 15
+    },
+    title:{
+        textAlign:'center', 
+        fontWeight:'bold', 
+        color: Colors.firstText, 
+        fontSize:18, 
+        paddingRight:'10%'
+    },
+    commentContainer:{
+        width: '100%', 
+        overflow: 'hidden', 
+        marginBottom: 5, 
+        justifyContent: 'space-between',
+        borderBottomWidth: 1, 
+        borderColor: 'grey'
+    },
+    userProfile:{
+        padding: 5, 
+        width: '100%', 
+        flexDirection:'row', 
+        justifyContent: 'space-between'
+    },
+    timestamp: {
+        fontSize: 11,
+        color: "#454D65",
+        marginTop: 4
+    },
+    commentView:{
+        backgroundColor:'#C4C6CE',
+        paddingHorizontal: 20, 
+        paddingVertical: 10, 
+        borderColor: 'grey', 
+        borderRadius: 20,
+        marginTop:10,
+        alignSelf:'flex-start'
+    }
+})
 
 export default Comments;

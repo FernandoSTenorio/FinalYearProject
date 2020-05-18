@@ -12,39 +12,38 @@ class EventList extends React.Component{
             event_list: [],
             refresh: false,
             loading: true,
-            empty: false
+            empty: false,
+            isEventProvider: false
         }
     }
 
+    /**
+     * Checks whether the event exists
+     */
     componentDidMount = () => {
 
         const { isEvent, eventId} = this.props;
 
-        if(isEvent == true){
+        if(isEvent == true){//checks is this is the selected event 
             //Profile
             //userid
-            this.loadFeed(eventId);
+            this.loadFeed(eventId);//load the selected event 
         }else{
             this.loadFeed('')
         }
     }
 
-    getVettingValue = (vetting) => {
-       
-        const vet = vetting.length;
-
-        for(var i = 0; i < vet; i++) {
-            vetting[i].item;
-        }
-    }
-
+    /**
+     * Add events to the FlastList
+     */
     addToFlatList = (event_list, data, event) => {
         var that = this;
         var eventObj = data[event];
+                    //Fetch the data from database
                     database.ref('users').child(eventObj.author).child('username').once('value').then(function(snapshot){
                         const exists = (snapshot.val() !== null);
-                        if(exists) data =snapshot.val();
-                        event_list.push({
+                        if(exists) data =snapshot.val();//checks if data evend exists
+                        event_list.push({//use the data collected and add to the FlatList
                             id: event,
                             eventPhoto: eventObj.eventPhoto,
                             title: eventObj.title,
@@ -59,6 +58,8 @@ class EventList extends React.Component{
                             description:eventObj.description,
                             location: eventObj.location
                         });
+                        console.log(eventObj.author);
+                        
                         that.setState({
                             refresh:false,
                             loading:false
@@ -69,6 +70,7 @@ class EventList extends React.Component{
 
     }
 
+
     _handleResults = (results) => {
         database.ref('events').orderByChild('title').equalTo(results).once('value').then(snapshot => {
             snapshot.forEach(data => {
@@ -78,6 +80,9 @@ class EventList extends React.Component{
         
     }
 
+    /**
+     * Fetch the events published into the Firebase by getting the user id
+     */
     loadFeed = (eventId = '') => {
         this.setState({
             refresh:true,
@@ -86,20 +91,24 @@ class EventList extends React.Component{
 
         var that = this;
 
+        //Start to get the events reference
         var loadRef = database.ref('events');
-        if(eventId != ''){
+        if(eventId != ''){//checks if the eventId is not empty
+            //Fetch the data
             var loadRef = database.ref('events').child(eventId);
         }
 
         loadRef.orderByChild('description').once('value').then(function(snapshot) {
 
             const exists = (snapshot.val() !== null);
-            if(exists){ data =snapshot.val();
+            if(exists){ data =snapshot.val();//checks if the data exists
                 var event_list = that.state.event_list;
 
+                //Loop through the data, check for each element found and return it as photo
                 for(var event in data){
                     
-                    that.setState({empty: false})
+                    that.setState({empty: false});
+                    ////if data is found, add to flat list
                     that.addToFlatList(event_list,data, event);
                     
                 }
@@ -110,6 +119,9 @@ class EventList extends React.Component{
         
     }
     
+    /**
+     * 
+     */
     loadNew = () => {
 
         this.loadFeed();

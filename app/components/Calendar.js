@@ -26,7 +26,7 @@ const Calendar = props => {
         
         setDate(currentDate);
         onChange(currentDate);
-        setShow(Platform.OS === 'ios' ? true : false); //according to Marco Terzolo "iOS dateTimePicker is a component that can be put and kept open side the view while android is more like a pop up so it has to be closed and opened only during user actions on its trigger". source: https://stackoverflow.com/questions/59901157/react-native-datetimepicker-question-in-this-code-why-platform-os-iostrue
+        setShow(Platform.OS === 'ios' ? true : false); 
         if(selectedDate < today){
             alert('The event cannot be bosted...');
           }
