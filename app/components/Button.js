@@ -2,6 +2,7 @@ import React from 'react';
 import {TouchableOpacity, View, StyleSheet, Text} from 'react-native';
 import Colors from '../components/constants/colors'
 
+
 const Button = props => {
     return(
         //Creates a Button component that will be used throughout the application

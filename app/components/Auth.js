@@ -106,6 +106,7 @@ class UserAuth extends React.Component{
         //set Extension of the file, look for sequance of Characters that matches the last.
         var re = /(?:\.([^.]+))?$/;
         var ext = re.exec(photoURL)[1];
+        var currentFileType = ext;
         this.setState({
             currentFileType: ext,
             uploading: true
@@ -114,7 +115,7 @@ class UserAuth extends React.Component{
         const response = await fetch(photoURL)
         //return the response into a blob
         const blob = await response.blob();
-        var FilePath = that.state.currentFileType;
+        var FilePath = currentFileType;
 
         const uploadTask = storage.ref('users/'+userObj.uid+'/profilePicture').child(FilePath).put(blob);
 
@@ -169,18 +170,17 @@ class UserAuth extends React.Component{
                 .then((userObj) => {//call the user object that is created in the function called
                     
                     //check if it is current user
-                    var currentUser = f.auth().currentUser;
-                    currentUser.updateProfile({//update firebase current user information
+                    userObj.user.updateProfile({//update firebase current user information
                         displayName: displayName,
                         photoURL: photoURL
-                    }).then(() => { 
-                        //parse all the user information into de database   
-                        this.createUserObj(userObj.user, email, userObj.user.displayName, username, userObj.user.photoURL);
+                    }).then(() => {
                         this.reloadPage();//reload the page after the sign up button is pressed
-                        this.setState({authStep: 1});//back to login page after sign up is completed 
-                        this.navigation.navigate("Profile");
+
+                        console.log(userObj);
                     }).catch((error) => (error));
-                       
+                    //parse all the user information into de database
+                    this.createUserObj(userObj.user, email, displayName, username, photoURL);
+
                 }).catch((error) => alert(error));
               }catch(error){
                 console.log(error);
@@ -199,7 +199,6 @@ class UserAuth extends React.Component{
             try{
                 //Sign in user with email and password credentials
                 let user = await auth.signInWithEmailAndPassword(email, pass);
-                this.navigation.navigate("Profile");
               }catch(error){
                 console.log(error);
                 alert(error);

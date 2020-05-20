@@ -39,11 +39,32 @@ class PhotoList extends React.Component{
     }
 
     /**
+     * Check s if use looged in
+     */
+    checkUserIsLogged = () => {
+        var that = this;
+        f.auth().onAuthStateChanged(function(user){
+            if(user){//checks if user exists
+                //user is looged in
+                that.setState({
+                    loggedin: true
+                });
+                
+            }else{
+                //user is looged ou
+                that.setState({
+                    loggedin: false
+                });
+            }
+        });
+    }
+
+    /**
      * Function used to check if the users exists
      */
     componentDidMount = () => {
 
-        const { isUser, userId} = this.props;
+        const { isUser, userId } = this.props;
 
         if(isUser == true){//checks if exists
             //Profile
@@ -54,6 +75,7 @@ class PhotoList extends React.Component{
         }else{
             this.loadFeed('')
         }
+        this.checkUserIsLogged()
          
     }
 
@@ -241,12 +263,21 @@ class PhotoList extends React.Component{
                     <View key={index}>
                         <View style={styles.listContainer}>
                             <View style={styles.feedItem}>
-                                <TouchableOpacity
-                                onPress={ () => this.props.navigation.navigate('User', {userId: item.authorId})}>
-                                    <Image source={{ url: item.photoURL}} style={styles.avatar}></Image>
-                                    <Text style={styles.name}>{item.author}</Text>
-                                    <Text style={styles.timestamp}>{timeConverter(item.posted)}</Text>
-                                </TouchableOpacity>
+                                {this.state.loggedin === true ? (
+                                    <TouchableOpacity
+                                    onPress={ () => this.props.navigation.navigate('User', {userId: item.authorId})}>
+                                        <Image source={{ url: item.photoURL}} style={styles.avatar}></Image>
+                                        <Text style={styles.name}>{item.author}</Text>
+                                        <Text style={styles.timestamp}>{timeConverter(item.posted)}</Text>
+                                    </TouchableOpacity>
+                                ) : (
+                                    <View>
+                                        <Image source={{ url: item.photoURL}} style={styles.avatar}></Image>
+                                        <Text style={styles.name}>{item.author}</Text>
+                                        <Text style={styles.timestamp}>{timeConverter(item.posted)}</Text>
+                                    </View>
+                                )}
+                                
                                 
                             </View>
                             <View>

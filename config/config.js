@@ -12,7 +12,8 @@ const firebaseConfig = {
 };
 
 //Initialize the App in Firebase
-firebase.initializeApp(firebaseConfig)
+firebase.initializeApp(firebaseConfig);
+
 
 //Connect each of the Firebase Features to Different Variable 
 export const f = firebase;

@@ -21,7 +21,6 @@ class UploadEvents extends React.Component{
     constructor(props){
         super(props);
         this.state ={
-            loggedin: false,
             eventId: uniqueId(),
             imageSelected: false,
             uploading: false,
@@ -31,8 +30,8 @@ class UploadEvents extends React.Component{
             eventPhoto: '',
             vetting:'',
             selectedValues: [],
-            outputTime: this.checkTime(),
-            outputDate: this.checkDate(),
+            outputTime: '',
+            outputDate: '',
             type: '',
             location: '',
             selected: 0
@@ -90,6 +89,27 @@ class UploadEvents extends React.Component{
             outputTime: outputTime
         });
         return outputTime;
+    }
+
+    /**
+     * Reload all components after en event is uploaded
+     */
+    reloadPage =() => {
+        this.setState({
+            imageSelected: false,
+            uploading: false,
+            title: '',
+            description:'',
+            progress: 0,
+            eventPhoto: '',
+            vetting:'',
+            selectedValues: [],
+            outputTime: '',
+            outputDate: '',
+            type: '',
+            location: '',
+            selected: 0
+        })
     }
 
 
@@ -263,6 +283,8 @@ class UploadEvents extends React.Component{
         }else{
             alert('Please enter a caption...')
         }
+        this.reloadPage();
+        this.props.navigation.navigate('Events');
         
     }
 
